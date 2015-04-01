@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<state>
+	<Children>
+	    <state SSID="0">
+	      <P Name="labelString">chart</P>
+	      <P Name="position">[172.9455 105.966 391.9245 200.9648]</P>
+	      <P Name="fontSize">12</P>
+	      <P Name="visible">0</P>
+	      <P Name="subviewer">4</P>
+	      <P Name="type">AND_STATE</P>
+	      <P Name="decomposition">CLUSTER_STATE</P>
+	      <P Name="executionOrder">1</P>
+	    </state>
+	</Children>
+</state>
+<Outport>
+ 	<Block BlockType="Outport" Name="out" SID="1::0">
+		<P Name="Position">[460, 101, 480, 119]</P>
+		<P Name="ZOrder">36</P>
+		<P Name="IconDisplay">Port number</P>
+	</Block>
+</Outport>
+<Inport>
+	 <Block BlockType="Inport" Name="in" SID="1::58">
+		<P Name="Position">[20, 101, 40, 119]</P>
+		<P Name="ZOrder">38</P>
+		<P Name="IconDisplay">Port number</P>
+	</Block>
+</Inport>
+<Line>
+	<P Name="ZOrder">14</P>
+	<P Name="Src">13::49#out:1</P>
+	<P Name="Dst">13::45#in:1</P>
+</Line>
+</root>
