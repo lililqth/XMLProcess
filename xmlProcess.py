@@ -25,7 +25,6 @@ class XMLProcess:
         # 重新映射SSID
         self.resetSSID(root)
         # 重置总输入输出为顶层
-        # ???
         self.replaceInputOutput(root)
         # 合并多个chart
         self.mergeChart(root)
