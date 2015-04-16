@@ -38,50 +38,67 @@ for i = 1:1:length(chList)
     top.name = chList(i).name;
 end
 
-%% 找到所有输入输出变量，并将其他的降级
-% 包括总IO和中间IO
-% cb = sfclipboard;
-% for i = 1:1:length(chList)
-%    top = chList(i).find('-isa', 'Stateflow.State', '-depth',1);
-%    data = chList(i).find('-isa', 'Stateflow.Data');
-%    for j = 1:1:length(data);
-%        scope = data(j).get('Scope');
-%        if strcmp(scope, 'Input') &&  strcmp(scope, 'Output')
-%            cb.copy(data(j));
-%            data(j).delete;
-%            cb.pasteTo(top);
-%        end
-%    end
-% end
+%% 改变数据层次
+%添加顶层模块后，所有的数据都在顶层模块之外
+%保留所有的输出变量，和总输入变量
+cb = sfclipboard;
+for i = 1:1:length(chList)
+   top = chList(i).find('-isa', 'Stateflow.State', '-depth',1);
+   data = chList(i).find('-isa', 'Stateflow.Data');
+   for j = 1:1:length(data);
+       scope = data(j).get('Scope');
+       description = data(j).get('Description');
+       if ~(strcmp(scope, 'Output') || (strcmp(scope, 'Input') && strcmp(description, 'in')))
+           data(j).Scope = 'Local';
+           cb.copy(data(j));
+           data(j).delete;
+           cb.pasteTo(top);
+       end
+   end
+end
 
-% %% 移动chart中的顶层模块和输入输出
-% maxWei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(1) + ...
-% chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(3) + 50;
-% modelHei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(2);
-% cb = sfclipboard;
-% for i = 2:1:length(chList)
-%     % 移动顶层模块
-%     stateTop = chList(i).find('-isa', 'Stateflow.State','-depth', 1); % 打包
-%     prevGrouping = stateTop.IsGrouped;
-%     if (prevGrouping == 0)
-%         stateTop.IsGrouped = 1;
-%     end
-%     cb.copy(stateTop);
-%     cb.pasteTo(chList(1));
-%     stateTopAfter = chList(1).find('Name',stateTop.Name, ...
-%     '-isa','Stateflow.State');
-%     stateTopAfter.Position(1) = maxWei+50;
-%     stateTopAfter.Position(2) = modelHei;
-%     maxWei =  stateTopAfter.Position(1)+ stateTopAfter.Position(3) + 50;
-%     % 移动输入输出,只将标记为总输入输出的变量置为顶层
-%     dataIO = chList(i).find('-isa', 'Stateflow.Data', '-depth', 1);
-%     dataExistName = chList(1).find('-isa', 'Stateflow.Data', '-depth', 1).get('Name');
-%     for j = 1:1:length(dataIO)
-%         if (strcmp(dataIO(j).get('Description'), 'in') || strcmp(dataIO(j).get('Description'), 'out')) && ismember(dataIO(j).get('Name'), dataExistName)==0
-%             cb.copy(dataIO(j));
-%             cb.pasteTo(chList(1));
-%         end
-%     end
-% end
-%% 
- sfsave(modelName, 'newModel');
+
+
+%% 移动chart中的顶层模块和输入输出
+maxWei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(1) + ...
+chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(3) + 50;
+modelHei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(2);
+
+for i = 2:1:length(chList)
+    % 移动顶层模块
+    stateTop = chList(i).find('-isa', 'Stateflow.State','-depth', 1); % 打包
+    prevGrouping = stateTop.IsGrouped;
+    if (prevGrouping == 0)
+        stateTop.IsGrouped = 1;
+    end
+    cb.copy(stateTop);
+    cb.pasteTo(chList(1));
+    stateTopAfter = chList(1).find('Name',stateTop.Name, ...
+    '-isa','Stateflow.State');
+    stateTopAfter.Position(1) = maxWei+50;
+    stateTopAfter.Position(2) = modelHei;
+    maxWei =  stateTopAfter.Position(1)+ stateTopAfter.Position(3) + 50;
+    
+    % 移动输入输出,只将标记为总输入输出的变量置为顶层，不可重复
+    dataIO = chList(i).find('-isa', 'Stateflow.Data', '-depth', 1);
+    for j = 1:1:length(dataIO)
+        dataExist = chList(1).find('-isa', 'Stateflow.Data', '-depth', 1);
+        tmp = ismember(dataExistName, dataIO(j).get('Name'));
+        if (strcmp(dataIO(j).get('Description'), 'in') || strcmp(dataIO(j).get('Description'), 'out'))
+            equal = false;
+            for k =1:1:length(dataExist)
+                if strcmp(dataExist(k).get('Name'), dataIO(j).get('Name'))
+                    equal= true;
+                    break;
+                end
+            end
+            if equal == false
+                cb.copy(dataIO(j));
+                cb.pasteTo(chList(1));
+            end
+        end
+    end
+end
+%chList(1).set('Name',modelName);
+%% 另存为
+sfsave(modelName, 'newModel');
