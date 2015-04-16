@@ -1,17 +1,25 @@
 rt = sfroot;
-m = rt.find('-isa','Simulink.BlockDiagram','Name', 'Model');
-fprintf('æ¨¡å‹åç§°: %s\n', m.get('Name'));
+modelName = 'all_in_one';
+m = rt.find('-isa','Simulink.BlockDiagram','Name', modelName);
+fprintf('Ä£ĞÍÃû³Æ: %s\n', m.get('Name'));
 chList = m.find('-isa','Stateflow.Chart');
 
-%% ä¸ºChartæ·»åŠ é¡¶å±‚æ¨¡å—
+%% ÎªChartÌí¼Ó¶¥²ãÄ£¿é
 for i = 1:1:length(chList)
     minX = 99999;
     minY = 99999;
     maxX = 0;
     maxY = 0;
-    stateArray = chList(i).find('-isa', 'Stateflow.State','-depth', 1);
-    for j = 1:1:length(stateArray)
-        position = stateArray(j).get('position');
+    % set decomposition of the stateflow to be Parallel
+    chList(i).set('Decomposition', 'Parallel');
+    % state£¬Graphical function , matlab function object
+    EMFunctionArray= chList(i).find('-isa', 'Stateflow.EMFunction');
+    stateArray= chList(i).find('-isa', 'Stateflow.State');
+    FunctionArray = chList(i).find('-isa', 'Stateflow.Function');
+    objArray = [stateArray; EMFunctionArray; FunctionArray];
+    % ±éÀústateÖĞµÄËùÓĞ¶ÔÏó£¬»ñÈ¡×óÉÏ½ÇºÍÓÒÏÂ½Ç
+    for j = 1:1:length(objArray)
+        position = objArray(j).get('position');
         if position(1) < minX
             minX = position(1);
         end
@@ -26,49 +34,54 @@ for i = 1:1:length(chList)
         end
     end
     top = Stateflow.State(chList(i));
-    top.position = [minX-50 minY-50 maxX-minX+100 maxY-minY+100];
+    top.position = [minX-100 minY-100 maxX-minX+200 maxY-minY+200];
     top.name = chList(i).name;
 end
 
-%% æ‰¾åˆ°æ€»çš„è¾“å…¥è¾“å‡ºå˜é‡ï¼Œå¹¶å°†å…¶ä»–çš„é™çº§
-cb = sfclipboard;
-for i = 1:1:length(chList)
-   top = chList(i).find('-isa', 'Stateflow.State', '-depth',1);
-   data = chList(i).find('-isa', 'Stateflow.Data');
-   for j = 1:1:length(data);
-       des = data(j).get('Description');
-       if strcmp(des, 'in')==0 &&  strcmp(des, 'out')==0
-           cb.copy(data(j));
-           data(j).delete;
-           cb.pasteTo(top);
-       end
-   end
-end
+%% ÕÒµ½ËùÓĞÊäÈëÊä³ö±äÁ¿£¬²¢½«ÆäËûµÄ½µ¼¶
+% °üÀ¨×ÜIOºÍÖĞ¼äIO
+% cb = sfclipboard;
+% for i = 1:1:length(chList)
+%    top = chList(i).find('-isa', 'Stateflow.State', '-depth',1);
+%    data = chList(i).find('-isa', 'Stateflow.Data');
+%    for j = 1:1:length(data);
+%        scope = data(j).get('Scope');
+%        if strcmp(scope, 'Input') &&  strcmp(scope, 'Output')
+%            cb.copy(data(j));
+%            data(j).delete;
+%            cb.pasteTo(top);
+%        end
+%    end
+% end
 
-%% ç§»åŠ¨chartä¸­çš„é¡¶å±‚æ¨¡å—å’Œè¾“å…¥è¾“å‡º
-maxWei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(1) + ...
-chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(3) + 50;
-modelHei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(2);
-cb = sfclipboard;
-for i = 2:1:length(chList)
-    % ç§»åŠ¨é¡¶å±‚æ¨¡å—
-    stateTop = chList(i).find('-isa', 'Stateflow.State','-depth', 1); % æ‰“åŒ…
-    prevGrouping = stateTop.IsGrouped;
-    if (prevGrouping == 0)
-        stateTop.IsGrouped = 1;
-    end
-    cb.copy(stateTop);
-    cb.pasteTo(chList(1));
-    stateTopAfter = chList(1).find('Name',stateTop.Name, ...
-    '-isa','Stateflow.State');
-    stateTopAfter.Position(1) = maxWei+50;
-    stateTopAfter.Position(2) = modelHei;
-    maxWei =  stateTopAfter.Position(1)+ stateTopAfter.Position(3) + 50;
-    % ç§»åŠ¨è¾“å…¥è¾“å‡º
-    dataIO = chList(i).find('-isa', 'Stateflow.Data', '-depth', 1);
-    cb.copy(dataIO);
-    cb.pasteTo(chList(1));
-end
+% %% ÒÆ¶¯chartÖĞµÄ¶¥²ãÄ£¿éºÍÊäÈëÊä³ö
+% maxWei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(1) + ...
+% chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(3) + 50;
+% modelHei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(2);
+% cb = sfclipboard;
+% for i = 2:1:length(chList)
+%     % ÒÆ¶¯¶¥²ãÄ£¿é
+%     stateTop = chList(i).find('-isa', 'Stateflow.State','-depth', 1); % ´ò°ü
+%     prevGrouping = stateTop.IsGrouped;
+%     if (prevGrouping == 0)
+%         stateTop.IsGrouped = 1;
+%     end
+%     cb.copy(stateTop);
+%     cb.pasteTo(chList(1));
+%     stateTopAfter = chList(1).find('Name',stateTop.Name, ...
+%     '-isa','Stateflow.State');
+%     stateTopAfter.Position(1) = maxWei+50;
+%     stateTopAfter.Position(2) = modelHei;
+%     maxWei =  stateTopAfter.Position(1)+ stateTopAfter.Position(3) + 50;
+%     % ÒÆ¶¯ÊäÈëÊä³ö,Ö»½«±ê¼ÇÎª×ÜÊäÈëÊä³öµÄ±äÁ¿ÖÃÎª¶¥²ã
+%     dataIO = chList(i).find('-isa', 'Stateflow.Data', '-depth', 1);
+%     dataExistName = chList(1).find('-isa', 'Stateflow.Data', '-depth', 1).get('Name');
+%     for j = 1:1:length(dataIO)
+%         if (strcmp(dataIO(j).get('Description'), 'in') || strcmp(dataIO(j).get('Description'), 'out')) && ismember(dataIO(j).get('Name'), dataExistName)==0
+%             cb.copy(dataIO(j));
+%             cb.pasteTo(chList(1));
+%         end
+%     end
+% end
 %% 
-
-sfsave('Model', 'newModel');
+ sfsave(modelName, 'newModel');
