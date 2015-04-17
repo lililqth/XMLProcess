@@ -4,6 +4,7 @@ m = rt.find('-isa','Simulink.BlockDiagram','Name', modelName);
 fprintf('模型名称: %s\n', m.get('Name'));
 chList = m.find('-isa','Stateflow.Chart');
 
+
 %% 为Chart添加顶层模块
 for i = 1:1:length(chList)
     minX = 99999;
@@ -33,6 +34,22 @@ for i = 1:1:length(chList)
             maxY = position(2)+position(4);
         end
     end
+    lines = chList(i).find('-isa', 'Stateflow.Transition');
+    for j = 1:1:length(lines)
+        LabelPos = lines(j).LabelPosition;
+        if LabelPos(1) < minX
+            minX = LabelPos(1);
+        end
+        if LabelPos(2) < minY
+            minY = LabelPos(2);
+        end
+        if LabelPos(1) + LabelPos(3) > maxX
+            maxX = LabelPos(1) + LabelPos(3);
+        end
+        if midpoint(2)+LabelPos(4) > maxY
+            maxY = midpoint(2) + LabelPos(4);
+        end
+    end
     top = Stateflow.State(chList(i));
     top.position = [minX-100 minY-100 maxX-minX+200 maxY-minY+200];
     top.name = chList(i).name;
@@ -48,7 +65,7 @@ for i = 1:1:length(chList)
    for j = 1:1:length(data);
        scope = data(j).get('Scope');
        description = data(j).get('Description');
-       if ~(strcmp(scope, 'Output') || (strcmp(scope, 'Input') && strcmp(description, 'in')))
+       if ~(strcmp(scope, 'Output') || strcmp(scope, 'Input'))
            data(j).Scope = 'Local';
            cb.copy(data(j));
            data(j).delete;
@@ -57,7 +74,16 @@ for i = 1:1:length(chList)
    end
 end
 
-
+%% 清理目标chart
+chList1Datas = chList(1).find('-isa', 'Stateflow.Data');
+for i = 1:1:length(chList1Datas)
+    if strcmp(chList1Datas(i).get('Scope'), 'Output') && ~strcmp(chList1Datas(i).get('Description'), 'out')
+        chList1Datas(i).Scope = 'Local';
+    end
+    if strcmp(chList1Datas(i).get('Scope'), 'Input') && ~strcmp(chList1Datas(i).get('Description'), 'in')
+        chList1Datas(i).delete;
+    end
+end
 
 %% 移动chart中的顶层模块和输入输出
 maxWei = chList(1).find('-isa', 'Stateflow.State', '-depth', 1).Position(1) + ...
@@ -79,26 +105,27 @@ for i = 2:1:length(chList)
     stateTopAfter.Position(2) = modelHei;
     maxWei =  stateTopAfter.Position(1)+ stateTopAfter.Position(3) + 50;
     
-    % 移动输入输出,只将标记为总输入输出的变量置为顶层，不可重复
+    % 移动输入输出，将中间signal置为local
     dataIO = chList(i).find('-isa', 'Stateflow.Data', '-depth', 1);
     for j = 1:1:length(dataIO)
         dataExist = chList(1).find('-isa', 'Stateflow.Data', '-depth', 1);
-        tmp = ismember(dataExistName, dataIO(j).get('Name'));
-        if (strcmp(dataIO(j).get('Description'), 'in') || strcmp(dataIO(j).get('Description'), 'out'))
-            equal = false;
-            for k =1:1:length(dataExist)
-                if strcmp(dataExist(k).get('Name'), dataIO(j).get('Name'))
-                    equal= true;
-                    break;
+        if (strcmp(dataIO(j).get('Scope'), 'Input') && strcmp(dataIO(j).get('Description'), 'in')) || strcmp(dataIO(j).get('Scope'), 'Output')
+                equal = false;
+                for k =1:1:length(dataExist)
+                    if strcmp(dataExist(k).get('Name'), dataIO(j).get('Name'))
+                        equal= true;
+                        break;
+                    end
                 end
-            end
-            if equal == false
-                cb.copy(dataIO(j));
-                cb.pasteTo(chList(1));
-            end
-        end
+                if equal == false
+                    if ~(strcmp(dataIO(j).get('Description'), 'in') || strcmp(dataIO(j).get('Description'), 'out'))
+                        dataIO(j).Scope = 'Local';
+                    end
+                    cb.copy(dataIO(j));
+                    cb.pasteTo(chList(1));
+                end
+        end 
     end
 end
-%chList(1).set('Name',modelName);
 %% 另存为
 sfsave(modelName, 'newModel');
