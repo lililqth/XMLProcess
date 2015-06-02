@@ -1,5 +1,6 @@
 rt = sfroot;
 modelName = 'model';
+open_system([modelName,'.slx']);
 m = rt.find('-isa','Simulink.BlockDiagram','Name', modelName);
 fprintf('模型名称: %s\n', m.get('Name'));
 chList = m.find('-isa','Stateflow.Chart');
@@ -129,3 +130,11 @@ for i = 2:1:length(chList)
 end
 %% 另存为
 sfsave(modelName, 'newModel');
+chNameList = '';
+for i = 1:1:length(chList)
+    chNameList = [chNameList ' ' chList(i).name];
+end
+close_system('newModel.slx');
+order = ['python deleteState.py ' 'newModel.slx' chNameList];
+system(order);
+open_system('newModel.slx');
