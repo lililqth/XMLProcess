@@ -1,5 +1,5 @@
 rt = sfroot;
-modelName = 'all_in_one';
+modelName = 'model';
 m = rt.find('-isa','Simulink.BlockDiagram','Name', modelName);
 fprintf('Ä£ÐÍÃû³Æ: %s\n', m.get('Name'));
 chList = m.find('-isa','Stateflow.Chart');
@@ -46,8 +46,8 @@ for i = 1:1:length(chList)
         if LabelPos(1) + LabelPos(3) > maxX
             maxX = LabelPos(1) + LabelPos(3);
         end
-        if midpoint(2)+LabelPos(4) > maxY
-            maxY = midpoint(2) + LabelPos(4);
+        if LabelPos(2)+LabelPos(4) > maxY
+            maxY = LabelPos(2) + LabelPos(4);
         end
     end
     top = Stateflow.State(chList(i));
